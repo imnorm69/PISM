@@ -2,7 +2,7 @@ namespace PISM.Core.Enums;
 
 public enum ImageStatus
 {
-    Pending,
+    NeedsReview,
     Kept,
     Deleted
 }
