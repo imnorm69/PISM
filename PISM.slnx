@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="PISM.Core/PISM.Core.csproj" />
+  <Project Path="PISM.Data/PISM.Data.csproj" />
+  <Project Path="PISM.Web/PISM.Web.csproj" />
+  <Project Path="PISM.Worker/PISM.Worker.csproj" />
+</Solution>
