@@ -19,6 +19,7 @@ public class ScannerService : IScannerService
 
     private readonly IImageRepository _imageRepo;
     private readonly IScanJobRepository _jobRepo;
+    private readonly IFolderContentsRepository _folderContents;
     private readonly IFileStorageService _storage;
     private readonly TestingOptions _testing;
     private readonly ILogger<ScannerService> _logger;
@@ -26,12 +27,14 @@ public class ScannerService : IScannerService
     public ScannerService(
         IImageRepository imageRepo,
         IScanJobRepository jobRepo,
+        IFolderContentsRepository folderContents,
         IFileStorageService storage,
         IOptions<TestingOptions> testing,
         ILogger<ScannerService> logger)
     {
         _imageRepo = imageRepo;
         _jobRepo = jobRepo;
+        _folderContents = folderContents;
         _storage = storage;
         _testing = testing.Value;
         _logger = logger;
@@ -166,6 +169,7 @@ public class ScannerService : IScannerService
                 DuplicateOfId = existing.Id
             };
             await _imageRepo.AddAsync(duplicate);
+            await _folderContents.UpsertAsync(hash, job.FolderPath);
             job.DuplicatesFound++;
             sidecar?.TryAdd(fileName, hash);
             return;
@@ -188,6 +192,7 @@ public class ScannerService : IScannerService
             IsDuplicate = false
         };
         await _imageRepo.AddAsync(image);
+        await _folderContents.UpsertAsync(hash, job.FolderPath);
         job.NewFiles++;
 
         if (!_testing.PreserveOriginals)

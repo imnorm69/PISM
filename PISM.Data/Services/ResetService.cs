@@ -28,6 +28,7 @@ public class ResetService
         var images = await _db.ImageFiles.ExecuteDeleteAsync();
         var hashes = await _db.DeletedHashes.ExecuteDeleteAsync();
         var jobs = await _db.ScanJobs.ExecuteDeleteAsync();
+        var folderContents = await _db.FolderContents.ExecuteDeleteAsync();
 
         // Delete encrypted files
         await _storage.DeleteAllAsync();
@@ -46,7 +47,7 @@ public class ResetService
 
         return new ResetResult
         {
-            DbRowsCleared = tags + images + hashes + jobs,
+            DbRowsCleared = tags + images + hashes + jobs + folderContents,
             SidecarFilesRemoved = sidecarsRemoved
         };
     }

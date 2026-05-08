@@ -11,6 +11,7 @@ public class PismDbContext : DbContext
     public DbSet<ImageTag> ImageTags => Set<ImageTag>();
     public DbSet<DeletedHash> DeletedHashes => Set<DeletedHash>();
     public DbSet<ScanJob> ScanJobs => Set<ScanJob>();
+    public DbSet<FolderContent> FolderContents => Set<FolderContent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +53,16 @@ public class PismDbContext : DbContext
             e.Property(x => x.ErrorMessage).HasMaxLength(2048);
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
             e.HasIndex(x => x.Status);
+        });
+
+        modelBuilder.Entity<FolderContent>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.FileHash).HasMaxLength(64).IsRequired();
+            e.Property(x => x.FolderPath).HasMaxLength(1024).IsRequired();
+            e.HasIndex(x => x.FileHash);
+            e.HasIndex(x => x.FolderPath);
+            e.HasIndex(x => new { x.FileHash, x.FolderPath }).IsUnique();
         });
     }
 }

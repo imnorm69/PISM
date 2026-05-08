@@ -61,13 +61,16 @@ public class ReviewController : Controller
         if (image.DuplicateOfId.HasValue)
             duplicateOf = await _imageRepo.GetByIdAsync(image.DuplicateOfId.Value);
 
+        var related = await _imageRepo.GetRelatedAsync(image.Hash);
+
         var vm = new DetailViewModel
         {
             Image = image,
             PreviousId = prevId,
             NextId = nextId,
             DuplicateOf = duplicateOf,
-            CurrentStatus = statusEnum
+            CurrentStatus = statusEnum,
+            RelatedImages = related
         };
 
         return View(vm);

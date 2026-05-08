@@ -67,6 +67,34 @@ public class ImageRepository : IImageRepository
     public Task<int> CountDuplicatesAsync() =>
         _db.ImageFiles.CountAsync(x => x.IsDuplicate);
 
+    public async Task<List<ImageFile>> GetRelatedAsync(string hash)
+    {
+        // Step 1: all folders that contain this hash
+        var folders = await _db.FolderContents
+            .Where(fc => fc.FileHash == hash)
+            .Select(fc => fc.FolderPath)
+            .Distinct()
+            .ToListAsync();
+
+        if (folders.Count == 0) return [];
+
+        // Step 2: all hashes in those folders, excluding the queried hash itself
+        var relatedHashes = await _db.FolderContents
+            .Where(fc => folders.Contains(fc.FolderPath) && fc.FileHash != hash)
+            .Select(fc => fc.FileHash)
+            .Distinct()
+            .ToListAsync();
+
+        if (relatedHashes.Count == 0) return [];
+
+        // Step 3: canonical (non-duplicate) ImageFiles for those hashes
+        return await _db.ImageFiles
+            .Where(img => relatedHashes.Contains(img.Hash) && !img.IsDuplicate)
+            .Include(img => img.Tags)
+            .OrderBy(img => img.DateScanned)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(ImageFile image)
     {
         _db.ImageFiles.Add(image);

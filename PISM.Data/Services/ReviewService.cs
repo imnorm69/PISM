@@ -9,11 +9,13 @@ public class ReviewService
 {
     private readonly PismDbContext _db;
     private readonly IImageRepository _imageRepo;
+    private readonly IFolderContentsRepository _folderContents;
 
-    public ReviewService(PismDbContext db, IImageRepository imageRepo)
+    public ReviewService(PismDbContext db, IImageRepository imageRepo, IFolderContentsRepository folderContents)
     {
         _db = db;
         _imageRepo = imageRepo;
+        _folderContents = folderContents;
     }
 
     public async Task KeepAsync(Guid id)
@@ -31,6 +33,8 @@ public class ReviewService
         await _db.ImageFiles
             .Where(x => x.Id == id)
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, ImageStatus.Deleted));
+
+        await _folderContents.DeleteAsync(image.Hash, image.OriginalFolder);
 
         if (!await _imageRepo.HashExistsInDeletedAsync(image.Hash))
         {
@@ -56,10 +60,12 @@ public class ReviewService
     {
         var idList = ids.ToList();
 
-        var hashes = await _db.ImageFiles
+        var images = await _db.ImageFiles
             .Where(x => idList.Contains(x.Id))
-            .Select(x => x.Hash)
+            .Select(x => new { x.Hash, x.OriginalFolder })
             .ToListAsync();
+
+        var hashes = images.Select(x => x.Hash).ToList();
 
         var existingHashes = await _db.DeletedHashes
             .Where(x => hashes.Contains(x.Hash))
@@ -79,6 +85,10 @@ public class ReviewService
         var count = await _db.ImageFiles
             .Where(x => idList.Contains(x.Id))
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, ImageStatus.Deleted));
+
+        // Remove FolderContents rows for each deleted image's specific hash+folder
+        foreach (var img in images)
+            await _folderContents.DeleteAsync(img.Hash, img.OriginalFolder);
 
         await _db.SaveChangesAsync();
         return count;

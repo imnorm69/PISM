@@ -16,4 +16,5 @@ public interface IImageRepository
     Task<long> TotalSizeByStatusAsync(ImageStatus status);
     Task<(Guid? PreviousId, Guid? NextId)> GetAdjacentIdsAsync(Guid currentId, ImageStatus status);
     Task<int> CountDuplicatesAsync();
+    Task<List<ImageFile>> GetRelatedAsync(string hash);
 }

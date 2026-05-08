@@ -10,4 +10,5 @@ public class DetailViewModel
     public Guid? NextId { get; set; }
     public ImageFile? DuplicateOf { get; set; }
     public ImageStatus CurrentStatus { get; set; }
+    public List<ImageFile> RelatedImages { get; set; } = [];
 }

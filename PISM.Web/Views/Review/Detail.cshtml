@@ -122,6 +122,26 @@
             </div>
         }
 
+        @if (Model.RelatedImages.Any())
+        {
+            <div class="p-3 border-bottom">
+                <h6 class="text-muted text-uppercase small mb-2">
+                    Found In Same Folder
+                    <span class="badge bg-secondary ms-1">@Model.RelatedImages.Count</span>
+                </h6>
+                <div class="d-flex flex-wrap gap-1">
+                    @foreach (var rel in Model.RelatedImages)
+                    {
+                        <a href="/review/detail/@rel.Id?status=@statusParam" title="@rel.FileName">
+                            <img src="/image/@rel.Id?mode=thumbnail"
+                                 style="width:56px;height:56px;object-fit:cover;border-radius:4px"
+                                 loading="lazy" alt="@rel.FileName" />
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
         <!-- Tags -->
         <div class="p-3 flex-grow-1">
             <h6 class="text-muted text-uppercase small mb-2">Tags</h6>

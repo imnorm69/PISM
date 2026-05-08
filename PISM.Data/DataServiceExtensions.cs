@@ -13,6 +13,7 @@ public static class DataServiceExtensions
         services.AddDbContext<PismDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IImageRepository, ImageRepository>();
         services.AddScoped<IScanJobRepository, ScanJobRepository>();
+        services.AddScoped<IFolderContentsRepository, FolderContentsRepository>();
         services.AddScoped<IScannerService, ScannerService>();
         services.AddScoped<ResetService>();
         services.AddScoped<ReviewService>();
