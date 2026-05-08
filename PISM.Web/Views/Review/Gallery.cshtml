@@ -1,0 +1,151 @@
+@model PISM.Web.ViewModels.GalleryPageViewModel
+@using PISM.Core.Enums
+@{
+    ViewData["Title"] = "Review — " + Model.CurrentStatus;
+    string statusParam = Model.CurrentStatus.ToString();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Review</h2>
+    <div class="d-flex gap-2" id="bulk-toolbar" style="display:none!important">
+        <span class="text-muted align-self-center" id="selected-count">0 selected</span>
+        @if (Model.CurrentStatus == ImageStatus.NeedsReview)
+        {
+            <button class="btn btn-sm btn-success" onclick="bulkAction('keep')">Keep Selected</button>
+            <button class="btn btn-sm btn-danger" onclick="bulkAction('delete')">Delete Selected</button>
+        }
+        <div class="input-group input-group-sm" style="width:220px">
+            <input type="text" id="bulk-tag-input" class="form-control" placeholder="Tag name" />
+            <button class="btn btn-outline-secondary" onclick="bulkAction('tag')">Tag Selected</button>
+        </div>
+        <button class="btn btn-sm btn-outline-primary" onclick="bulkDownload()">Download Selected</button>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link @(Model.CurrentStatus == ImageStatus.NeedsReview ? "active" : "")"
+           href="/review/gallery?status=NeedsReview">
+            Needs Review
+            @if (Model.CurrentStatus == ImageStatus.NeedsReview)
+            {
+                <span class="badge bg-secondary ms-1">@Model.TotalCount</span>
+            }
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.CurrentStatus == ImageStatus.Kept ? "active" : "")"
+           href="/review/gallery?status=Kept">
+            Kept
+            @if (Model.CurrentStatus == ImageStatus.Kept)
+            {
+                <span class="badge bg-success ms-1">@Model.TotalCount</span>
+            }
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.CurrentStatus == ImageStatus.Deleted ? "active" : "")"
+           href="/review/gallery?status=Deleted">
+            Deleted
+            @if (Model.CurrentStatus == ImageStatus.Deleted)
+            {
+                <span class="badge bg-danger ms-1">@Model.TotalCount</span>
+            }
+        </a>
+    </li>
+</ul>
+
+@if (!Model.Images.Any())
+{
+    <div class="text-center text-muted py-5">
+        <p class="fs-5">No images in this queue.</p>
+        @if (Model.CurrentStatus == ImageStatus.NeedsReview)
+        {
+            <a href="/scan" class="btn btn-primary">Start a Scan</a>
+        }
+    </div>
+}
+else
+{
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-2" id="gallery-grid">
+        @foreach (var img in Model.Images)
+        {
+            <div class="col gallery-item" data-id="@img.Id">
+                <div class="card h-100 position-relative">
+                    <div class="form-check position-absolute top-0 start-0 m-1 z-1">
+                        <input class="form-check-input gallery-checkbox" type="checkbox"
+                               data-id="@img.Id" onchange="onCheckboxChange()" />
+                    </div>
+                    @if (img.IsDuplicate)
+                    {
+                        <span class="badge bg-warning position-absolute top-0 end-0 m-1 z-1">Dupe</span>
+                    }
+                    <a href="/review/detail/@img.Id?status=@statusParam">
+                        <img src="/image/@img.Id?mode=thumbnail" class="card-img-top"
+                             style="height:140px;object-fit:cover" loading="lazy"
+                             alt="@img.FileName" />
+                    </a>
+                    <div class="card-body p-1">
+                        <p class="card-text small text-truncate mb-1" title="@img.FileName">@img.FileName</p>
+                        @if (img.Tags.Any())
+                        {
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var tag in img.Tags.Take(3))
+                                {
+                                    <span class="badge bg-info text-dark">@tag.Tag</span>
+                                }
+                                @if (img.Tags.Count > 3)
+                                {
+                                    <span class="badge bg-light text-muted">+@(img.Tags.Count - 3)</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (Model.CurrentStatus == ImageStatus.NeedsReview)
+                    {
+                        <div class="card-footer p-1 d-flex gap-1">
+                            <button class="btn btn-sm btn-success flex-grow-1"
+                                    onclick="quickAction('@img.Id', 'keep', this)">✓</button>
+                            <button class="btn btn-sm btn-danger flex-grow-1"
+                                    onclick="quickAction('@img.Id', 'delete', this)">✗</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @if (Model.CurrentPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?page=@(Model.CurrentPage - 1)&status=@statusParam">Previous</a>
+                    </li>
+                }
+                @for (int p = Math.Max(1, Model.CurrentPage - 2); p <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); p++)
+                {
+                    <li class="page-item @(p == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="?page=@p&status=@statusParam">@p</a>
+                    </li>
+                }
+                @if (Model.CurrentPage < Model.TotalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?page=@(Model.CurrentPage + 1)&status=@statusParam">Next</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    <script>
+        const STATUS = '@statusParam';
+    </script>
+    <script src="~/js/gallery.js" asp-append-version="true"></script>
+}

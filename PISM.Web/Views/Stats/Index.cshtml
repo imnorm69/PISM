@@ -1,0 +1,118 @@
+@model PISM.Web.ViewModels.StatsViewModel
+@using PISM.Core.Enums
+@{
+    ViewData["Title"] = "Statistics";
+}
+
+<h2 class="mb-4">Statistics</h2>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-md-3">
+        <div class="card text-bg-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Needs Review</h5>
+                <p class="display-6 mb-0">@Model.NeedsReviewCount</p>
+                <p class="small mb-0">@FormatSize(Model.NeedsReviewBytes)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Kept</h5>
+                <p class="display-6 mb-0">@Model.KeptCount</p>
+                <p class="small mb-0">@FormatSize(Model.KeptBytes)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card text-bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">Deleted</h5>
+                <p class="display-6 mb-0">@Model.DeletedCount</p>
+                <p class="small mb-0">@FormatSize(Model.DeletedBytes)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card text-bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Duplicates</h5>
+                <p class="display-6 mb-0">@Model.DuplicatesCount</p>
+                <p class="small mb-0">of @Model.TotalCount total</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.TotalCount > 0)
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="card-title">Storage Breakdown</h6>
+            <div class="progress" style="height:20px">
+                @{
+                    double total = Model.TotalBytes == 0 ? 1 : Model.TotalBytes;
+                    int needsPct = (int)(Model.NeedsReviewBytes * 100 / total);
+                    int keptPct = (int)(Model.KeptBytes * 100 / total);
+                    int delPct = 100 - needsPct - keptPct;
+                }
+                <div class="progress-bar bg-secondary" style="width:@needsPct%"
+                     title="Needs Review — @FormatSize(Model.NeedsReviewBytes)">
+                    @if (needsPct > 5) { @(needsPct + "%") }
+                </div>
+                <div class="progress-bar bg-success" style="width:@keptPct%"
+                     title="Kept — @FormatSize(Model.KeptBytes)">
+                    @if (keptPct > 5) { @(keptPct + "%") }
+                </div>
+                <div class="progress-bar bg-danger" style="width:@delPct%"
+                     title="Deleted — @FormatSize(Model.DeletedBytes)">
+                    @if (delPct > 5) { @(delPct + "%") }
+                </div>
+            </div>
+            <p class="small text-muted mt-1 mb-0">Total: @FormatSize(Model.TotalBytes)</p>
+        </div>
+    </div>
+}
+
+@if (Model.RecentJobs.Any())
+{
+    <h5>Recent Scan Jobs</h5>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Folder</th>
+                <th>Status</th>
+                <th>New</th>
+                <th>Dupes</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var job in Model.RecentJobs)
+            {
+                <tr>
+                    <td class="text-truncate" style="max-width:300px" title="@job.FolderPath">@job.FolderPath</td>
+                    <td>
+                        <span class="badge @(job.Status == ScanJobStatus.Completed ? "bg-success" : job.Status == ScanJobStatus.Failed ? "bg-danger" : "bg-secondary")">
+                            @job.Status
+                        </span>
+                    </td>
+                    <td>@job.NewFiles</td>
+                    <td>@job.DuplicatesFound</td>
+                    <td>@job.DateStarted.ToLocalTime().ToString("g")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@functions {
+    static string FormatSize(long bytes) => bytes switch
+    {
+        < 1024 => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+        < 1024L * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+        _ => $"{bytes / (1024.0 * 1024 * 1024):F2} GB"
+    };
+}

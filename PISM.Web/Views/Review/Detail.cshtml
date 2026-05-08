@@ -1,0 +1,172 @@
+@model PISM.Web.ViewModels.DetailViewModel
+@using PISM.Core.Enums
+@{
+    ViewData["Title"] = Model.Image.FileName;
+    string statusParam = Model.CurrentStatus.ToString();
+    bool hasCrop = Model.Image.CropWidth.HasValue;
+    bool hasEdits = Model.Image.RotationDegrees != 0 || hasCrop;
+}
+
+<div class="row g-0">
+    <!-- Image panel -->
+    <div class="col-lg-8 d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+            <a href="/review/gallery?status=@statusParam" class="btn btn-sm btn-outline-secondary">
+                ← Gallery
+            </a>
+            <div class="d-flex gap-2">
+                @if (Model.PreviousId.HasValue)
+                {
+                    <a href="/review/detail/@Model.PreviousId?status=@statusParam"
+                       class="btn btn-sm btn-outline-secondary">‹ Prev</a>
+                }
+                @if (Model.NextId.HasValue)
+                {
+                    <a href="/review/detail/@Model.NextId?status=@statusParam"
+                       class="btn btn-sm btn-outline-secondary">Next ›</a>
+                }
+            </div>
+        </div>
+
+        <div class="position-relative flex-grow-1 bg-dark d-flex align-items-center justify-content-center" style="min-height:400px">
+            <img id="main-image"
+                 src="/image/@Model.Image.Id?mode=preview"
+                 class="img-fluid"
+                 style="max-height:70vh;cursor:crosshair"
+                 alt="@Model.Image.FileName" />
+        </div>
+
+        <!-- Crop/rotate toolbar -->
+        <div class="p-2 border-top bg-light d-flex align-items-center gap-2 flex-wrap">
+            <button class="btn btn-sm btn-outline-primary" id="btn-crop-toggle">Enable Crop</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="rotateLeft()">↺ 90°</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="rotateRight()">↻ 90°</button>
+            <button class="btn btn-sm btn-outline-secondary" id="btn-reset-crop" style="display:none">Reset Crop</button>
+            <button class="btn btn-sm btn-success" id="btn-save-edits" onclick="saveEdits()">Save Edits</button>
+            <span id="edits-saved" class="text-success small" style="display:none">Saved</span>
+            @if (hasEdits)
+            {
+                <a href="/download/@Model.Image.Id?format=edited" class="btn btn-sm btn-outline-primary ms-auto">
+                    Download Edited
+                </a>
+            }
+            else
+            {
+                <a href="/download/@Model.Image.Id" class="btn btn-sm btn-outline-secondary ms-auto">
+                    Download Original
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4 border-start d-flex flex-column" style="min-height:calc(100vh - 56px)">
+        <!-- Status actions -->
+        <div class="p-3 border-bottom">
+            <div class="d-flex gap-2 mb-2">
+                @if (Model.Image.Status != ImageStatus.Kept)
+                {
+                    <button class="btn btn-success flex-grow-1" id="btn-keep" onclick="reviewAction('keep')">
+                        ✓ Keep
+                    </button>
+                }
+                @if (Model.Image.Status != ImageStatus.Deleted)
+                {
+                    <button class="btn btn-danger flex-grow-1" id="btn-delete" onclick="reviewAction('delete')">
+                        ✗ Delete
+                    </button>
+                }
+            </div>
+            <div class="text-muted small">
+                Current status:
+                <span class="badge @(Model.Image.Status == ImageStatus.Kept ? "bg-success" : Model.Image.Status == ImageStatus.Deleted ? "bg-danger" : "bg-secondary")" id="status-badge">
+                    @Model.Image.Status
+                </span>
+            </div>
+        </div>
+
+        <!-- File info -->
+        <div class="p-3 border-bottom">
+            <h6 class="text-muted text-uppercase small mb-2">File Info</h6>
+            <dl class="row mb-0 small">
+                <dt class="col-5">Name</dt>
+                <dd class="col-7 text-truncate" title="@Model.Image.FileName">@Model.Image.FileName</dd>
+                <dt class="col-5">Folder</dt>
+                <dd class="col-7 text-truncate" title="@Model.Image.OriginalFolder">@Model.Image.OriginalFolder</dd>
+                <dt class="col-5">Size</dt>
+                <dd class="col-7">@FormatSize(Model.Image.FileSizeBytes)</dd>
+                <dt class="col-5">Scanned</dt>
+                <dd class="col-7">@Model.Image.DateScanned.ToLocalTime().ToString("g")</dd>
+                @if (Model.Image.RotationDegrees != 0)
+                {
+                    <dt class="col-5">Rotation</dt>
+                    <dd class="col-7" id="rotation-display">@Model.Image.RotationDegrees°</dd>
+                }
+                @if (hasCrop)
+                {
+                    <dt class="col-5">Crop</dt>
+                    <dd class="col-7">@Model.Image.CropWidth×@Model.Image.CropHeight</dd>
+                }
+            </dl>
+        </div>
+
+        @if (Model.Image.IsDuplicate && Model.DuplicateOf != null)
+        {
+            <div class="p-3 border-bottom">
+                <h6 class="text-muted text-uppercase small mb-2">Duplicate Of</h6>
+                <a href="/review/detail/@Model.DuplicateOf.Id">
+                    <img src="/image/@Model.DuplicateOf.Id?mode=thumbnail"
+                         class="img-fluid rounded" style="max-height:100px" alt="original" />
+                </a>
+                <p class="small text-truncate mt-1">@Model.DuplicateOf.FileName</p>
+            </div>
+        }
+
+        <!-- Tags -->
+        <div class="p-3 flex-grow-1">
+            <h6 class="text-muted text-uppercase small mb-2">Tags</h6>
+            <div id="tag-list" class="d-flex flex-wrap gap-1 mb-2">
+                @foreach (var tag in Model.Image.Tags)
+                {
+                    <span class="badge bg-info text-dark d-flex align-items-center gap-1" data-tag-id="@tag.Id">
+                        @tag.Tag
+                        <button type="button" class="btn-close btn-close-white"
+                                style="font-size:.5rem"
+                                onclick="removeTag('@tag.Id', this)"></button>
+                    </span>
+                }
+            </div>
+            <div class="input-group input-group-sm">
+                <input type="text" id="new-tag-input" class="form-control" placeholder="Add tag…"
+                       onkeydown="if(event.key==='Enter'){addTag();event.preventDefault();}" />
+                <button class="btn btn-outline-secondary" onclick="addTag()">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    static string FormatSize(long bytes) => bytes switch
+    {
+        < 1024 => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+        < 1024L * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+        _ => $"{bytes / (1024.0 * 1024 * 1024):F2} GB"
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
+}
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+    <script>
+        const IMAGE_ID = '@Model.Image.Id';
+        const STATUS_PARAM = '@statusParam';
+        let currentRotation = @Model.Image.RotationDegrees;
+        let savedCrop = @(hasCrop ? $"{{x:{Model.Image.CropX},y:{Model.Image.CropY},width:{Model.Image.CropWidth},height:{Model.Image.CropHeight}}}" : "null");
+    </script>
+    <script src="~/js/detail.js" asp-append-version="true"></script>
+}

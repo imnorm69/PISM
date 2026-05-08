@@ -22,6 +22,12 @@ public class ScanJobRepository : IScanJobRepository
             .OrderBy(x => x.DateStarted)
             .ToListAsync();
 
+    public Task<List<ScanJob>> GetRecentAsync(int count) =>
+        _db.ScanJobs
+            .OrderByDescending(x => x.DateStarted)
+            .Take(count)
+            .ToListAsync();
+
     public async Task<ScanJob> CreateAsync(string folderPath)
     {
         var job = new ScanJob

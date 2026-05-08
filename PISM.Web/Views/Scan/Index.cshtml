@@ -1,0 +1,113 @@
+@model PISM.Web.ViewModels.ScanIndexViewModel
+@using PISM.Core.Enums
+@{
+    ViewData["Title"] = "Scan";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Scan Folders</h2>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card mb-4">
+    <div class="card-header">Start New Scan</div>
+    <div class="card-body">
+        <form method="post" action="/scan">
+            @Html.AntiForgeryToken()
+            <div class="input-group">
+                <input type="text" name="folderPath" class="form-control"
+                       placeholder="e.g. C:\Photos\Vacation or \\server\share\images"
+                       required />
+                <button type="submit" class="btn btn-primary">Scan Folder</button>
+            </div>
+            <div class="form-text">Enter the absolute path to the folder containing images to import.</div>
+        </form>
+    </div>
+</div>
+
+@if (Model.ActiveJobs.Any())
+{
+    <h5>Active Jobs</h5>
+    <div id="active-jobs" class="mb-4">
+        @foreach (var job in Model.ActiveJobs)
+        {
+            <div class="card mb-2 scan-job-card" data-job-id="@job.Id">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-1">
+                        <strong class="text-truncate me-3">@job.FolderPath</strong>
+                        <span class="badge @(job.Status == ScanJobStatus.Running ? "bg-primary" : "bg-secondary") job-status">
+                            @job.Status
+                        </span>
+                    </div>
+                    <div class="progress mb-1" style="height:6px">
+                        <div class="progress-bar job-progress-bar"
+                             style="width: @(job.TotalFiles > 0 ? (job.ProcessedFiles * 100 / job.TotalFiles) : 0)%">
+                        </div>
+                    </div>
+                    <small class="text-muted job-stats">
+                        @job.ProcessedFiles / @job.TotalFiles files &mdash;
+                        @job.NewFiles new, @job.DuplicatesFound duplicates
+                    </small>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (Model.RecentJobs.Any())
+{
+    <h5>Recent Jobs</h5>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Folder</th>
+                <th>Status</th>
+                <th>Files</th>
+                <th>New</th>
+                <th>Dupes</th>
+                <th>Started</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var job in Model.RecentJobs)
+            {
+                <tr>
+                    <td class="text-truncate" style="max-width:300px" title="@job.FolderPath">@job.FolderPath</td>
+                    <td>
+                        <span class="badge @(job.Status == ScanJobStatus.Completed ? "bg-success" : "bg-danger")">
+                            @job.Status
+                        </span>
+                    </td>
+                    <td>@job.ProcessedFiles / @job.TotalFiles</td>
+                    <td>@job.NewFiles</td>
+                    <td>@job.DuplicatesFound</td>
+                    <td>@job.DateStarted.ToLocalTime().ToString("g")</td>
+                </tr>
+                @if (!string.IsNullOrEmpty(job.ErrorMessage))
+                {
+                    <tr>
+                        <td colspan="6" class="text-danger small">@job.ErrorMessage</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@section Scripts {
+    <script src="~/js/scan-progress.js" asp-append-version="true"></script>
+}

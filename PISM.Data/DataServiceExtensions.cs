@@ -15,6 +15,7 @@ public static class DataServiceExtensions
         services.AddScoped<IScanJobRepository, ScanJobRepository>();
         services.AddScoped<IScannerService, ScannerService>();
         services.AddScoped<ResetService>();
+        services.AddScoped<ReviewService>();
         return services;
     }
 }
