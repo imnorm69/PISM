@@ -1,8 +1,10 @@
 using PISM.Data;
+using PISM.Web.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPismData(builder.Configuration.GetConnectionString("Default")!);
+builder.Services.AddSignalR();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -27,5 +29,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<ScanHub>(ScanHub.Url);
 
 app.Run();
