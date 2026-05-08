@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: pism
+      POSTGRES_USER: pism
+      POSTGRES_PASSWORD: pism_dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    environment:
+      ConnectionStrings__Default: "Host=db;Database=pism;Username=pism;Password=pism_dev_password"
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
