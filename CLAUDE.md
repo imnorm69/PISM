@@ -12,19 +12,34 @@ Four projects in `PISM.slnx`:
 - **PISM.Web** — ASP.NET Core MVC app (UI + SignalR hub + API endpoints)
 - **PISM.Worker** — Background/Hosted Service for folder scanning
 - **PISM.Core** — Shared models, enums, interfaces, and DTOs
-- **PISM.Data** — EF Core DbContext, migrations, and service registration
+- **PISM.Data** — EF Core DbContext, repositories, migrations, and service registration
 
 Project references: Web → Core + Data; Worker → Core + Data; Data → Core.
 
 ## Key Source Locations
 
-- `PISM.Core/Models/` — `ImageFile`, `Tag`
-- `PISM.Core/Enums/` — `ImageStatus` (`Pending`, `Kept`, `Deleted`)
-- `PISM.Data/PismDbContext.cs` — EF Core DbContext with `ImageFiles` and `Tags` DbSets
-- `PISM.Data/DataServiceExtensions.cs` — `AddPismData(connectionString)` extension used by Web and Worker
-- `PISM.Data/PismDbContextFactory.cs` — design-time factory for `dotnet ef` CLI
-- `PISM.Data/Migrations/` — EF Core migrations
-- `PISM.Web/Hubs/ScanHub.cs` — SignalR hub for scan progress; mounted at `/hubs/scan`
+### PISM.Core
+- `Models/ImageFile.cs` — core entity: filename, folder, hash, status, encryption path, non-destructive crop/rotation, tags
+- `Models/ImageTag.cs` — tag string attached to an `ImageFile` (FK: `ImageFileId`)
+- `Models/DeletedHash.cs` — permanent record of hashes for deleted files (for duplicate detection)
+- `Models/ScanJob.cs` — tracks a folder scan: progress counters, status, error message
+- `Enums/ImageStatus.cs` — `NeedsReview`, `Kept`, `Deleted`
+- `Enums/ScanJobStatus.cs` — `Pending`, `Running`, `Completed`, `Failed`
+
+### PISM.Data
+- `PismDbContext.cs` — DbSets for `ImageFiles`, `ImageTags`, `DeletedHashes`, `ScanJobs`; indexes on `Hash`, `Status`, `ImageFileId`, `Tag`; max lengths on all strings
+- `DataServiceExtensions.cs` — `AddPismData(connectionString)` registers `PismDbContext` + `IImageRepository`; called from both Web and Worker `Program.cs`
+- `PismDbContextFactory.cs` — design-time factory for `dotnet ef` CLI
+- `Migrations/` — EF Core migrations
+- `Repositories/IImageRepository.cs` — repository interface (get by hash/id, paged review queue, add/update, counts/sizes by status)
+- `Repositories/ImageRepository.cs` — EF Core implementation of `IImageRepository`
+
+### PISM.Web
+- `Program.cs` — registers `AddPismData`, `AddSignalR`, MVC, and maps `ScanHub`
+- `Hubs/ScanHub.cs` — SignalR hub for real-time scan progress; mounted at `/hubs/scan`
+
+### PISM.Worker
+- `Program.cs` — registers `AddPismData` and the `Worker` hosted service
 
 ## Tech Stack
 
