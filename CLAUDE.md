@@ -34,7 +34,7 @@ Four projects in `PISM.sln`:
 ## Build & Run
 
 ```bash
-dotnet build PISM.sln
+dotnet build PISM.slnx
 dotnet test
 docker-compose up --build
 ```
