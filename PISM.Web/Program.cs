@@ -1,4 +1,8 @@
+using PISM.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddPismData(builder.Configuration.GetConnectionString("Default")!);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
