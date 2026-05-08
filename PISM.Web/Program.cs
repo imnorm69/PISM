@@ -1,29 +1,34 @@
+using PISM.Core.Options;
+using PISM.Core.Services;
 using PISM.Data;
 using PISM.Web.Hubs;
+using PISM.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection(StorageOptions.Section));
+builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection(EncryptionOptions.Section));
+builder.Services.Configure<TestingOptions>(builder.Configuration.GetSection(TestingOptions.Section));
+
+builder.Services.AddSingleton<IEncryptionService, AesGcmEncryptionService>();
+builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+
 builder.Services.AddPismData(builder.Configuration.GetConnectionString("Default")!);
 builder.Services.AddSignalR();
-
-// Add services to the container.
+builder.Services.AddHostedService<ScanBackgroundService>();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
 
 app.MapControllerRoute(

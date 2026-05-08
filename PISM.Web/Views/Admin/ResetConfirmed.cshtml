@@ -1,0 +1,15 @@
+@model PISM.Data.Services.ResetResult
+@{
+    ViewData["Title"] = "Reset Complete";
+}
+
+<div class="container mt-4">
+    <div class="alert alert-success">
+        <h4 class="alert-heading">Reset Complete</h4>
+        <ul>
+            <li>Database rows cleared: <strong>@Model.DbRowsCleared</strong></li>
+            <li>Sidecar files removed: <strong>@Model.SidecarFilesRemoved</strong></li>
+        </ul>
+    </div>
+    <a href="/" class="btn btn-primary">Back to Home</a>
+</div>

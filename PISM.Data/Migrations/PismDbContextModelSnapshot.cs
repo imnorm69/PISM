@@ -65,6 +65,9 @@ namespace PISM.Data.Migrations
                     b.Property<DateTime>("DateScanned")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("DuplicateOfId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("EncryptedFilePath")
                         .IsRequired()
                         .HasMaxLength(1024)
@@ -82,6 +85,9 @@ namespace PISM.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<bool>("IsDuplicate")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsEncrypted")
                         .HasColumnType("boolean");
@@ -102,6 +108,8 @@ namespace PISM.Data.Migrations
                         .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DuplicateOfId");
 
                     b.HasIndex("Hash");
 
@@ -179,6 +187,14 @@ namespace PISM.Data.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("ScanJobs");
+                });
+
+            modelBuilder.Entity("PISM.Core.Models.ImageFile", b =>
+                {
+                    b.HasOne("PISM.Core.Models.ImageFile", null)
+                        .WithMany()
+                        .HasForeignKey("DuplicateOfId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("PISM.Core.Models.ImageTag", b =>

@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Reset Database";
+}
+
+<div class="container mt-4">
+    <div class="alert alert-danger">
+        <h4 class="alert-heading">⚠ Destructive Operation</h4>
+        <p>This will permanently delete:</p>
+        <ul>
+            <li>All records from the database (images, tags, scan jobs, deleted hashes)</li>
+            <li>All encrypted files from the storage folder</li>
+            <li>All <code>_pism_scanned.txt</code> sidecar files from previously scanned folders</li>
+        </ul>
+        <p class="mb-0">This action cannot be undone. Only available in test mode (<code>Testing:PreserveOriginals = true</code>).</p>
+    </div>
+
+    <form method="post" action="/admin/reset">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-danger btn-lg">Reset Everything</button>
+        <a href="/" class="btn btn-secondary btn-lg ms-2">Cancel</a>
+    </form>
+</div>

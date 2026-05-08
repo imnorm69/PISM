@@ -18,5 +18,7 @@ public class ImageFile
     public int? CropWidth { get; set; }
     public int? CropHeight { get; set; }
     public int RotationDegrees { get; set; }
+    public bool IsDuplicate { get; set; }
+    public Guid? DuplicateOfId { get; set; }
     public ICollection<ImageTag> Tags { get; set; } = [];
 }

@@ -25,6 +25,7 @@ public class PismDbContext : DbContext
             e.Property(x => x.RotationDegrees).HasDefaultValue(0);
             e.HasIndex(x => x.Hash);
             e.HasIndex(x => x.Status);
+            e.HasOne<ImageFile>().WithMany().HasForeignKey(x => x.DuplicateOfId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.Tags).WithOne(t => t.ImageFile).HasForeignKey(t => t.ImageFileId);
         });
 

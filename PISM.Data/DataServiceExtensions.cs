@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using PISM.Core.Services;
 using PISM.Data.Repositories;
+using PISM.Data.Services;
 
 namespace PISM.Data;
 
@@ -10,6 +12,9 @@ public static class DataServiceExtensions
     {
         services.AddDbContext<PismDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IImageRepository, ImageRepository>();
+        services.AddScoped<IScanJobRepository, ScanJobRepository>();
+        services.AddScoped<IScannerService, ScannerService>();
+        services.AddScoped<ResetService>();
         return services;
     }
 }

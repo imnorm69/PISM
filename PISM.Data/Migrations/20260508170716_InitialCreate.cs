@@ -41,11 +41,19 @@ namespace PISM.Data.Migrations
                     CropY = table.Column<int>(type: "integer", nullable: true),
                     CropWidth = table.Column<int>(type: "integer", nullable: true),
                     CropHeight = table.Column<int>(type: "integer", nullable: true),
-                    RotationDegrees = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                    RotationDegrees = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    IsDuplicate = table.Column<bool>(type: "boolean", nullable: false),
+                    DuplicateOfId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ImageFiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ImageFiles_ImageFiles_DuplicateOfId",
+                        column: x => x.DuplicateOfId,
+                        principalTable: "ImageFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -92,6 +100,11 @@ namespace PISM.Data.Migrations
                 table: "DeletedHashes",
                 column: "Hash",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ImageFiles_DuplicateOfId",
+                table: "ImageFiles",
+                column: "DuplicateOfId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ImageFiles_Hash",
